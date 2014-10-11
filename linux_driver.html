@@ -1,0 +1,654 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>GPIO Learning Sharing</title>
+<meta name="author" content="(Zhang Liu)"/>
+
+<link rel="stylesheet" href="./reveal.js/css/reveal.min.css"/>
+<link rel="stylesheet" href="./reveal.js/css/theme/simple.css" id="theme"/>
+
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = './reveal.js/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<meta name="description" content="Org-Reveal Introduction.">
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section>
+<h1>GPIO Learning Sharing</h1>
+<h2>Zhang Liu</h2>
+<h2><a href="mailto:zhang.liu@intel.com">zhang.liu@intel.com</a></h2>
+<h2>2014-08-19</h2></section>
+<section>
+<h2>Table of Contents</h2><ul>
+<li>
+<a href="#sec-1">linux kernel module</a>
+</li>
+<li>
+<a href="#sec-2">linux driver</a>
+</li>
+<li>
+<a href="#sec-3">gpio code</a>
+</li>
+<li>
+<a href="#sec-4">a character linux driver to blink LED</a>
+</li>
+<li>
+<a href="#sec-5">Reference</a>
+</li>
+</ul>
+</section>
+
+<section id="sec-1" >
+
+<h2>linux kernel module</h2>
+<ul class="org-ul">
+<li>linux module scheme is for dynamicly controlling linux kernel.
+</li>
+<li>module is not compiled into kernel,so the size of kernel can be controlled
+</li>
+<li>once be loaded,module can be seen part of kernel
+</li>
+<li>module can be added or deleted as ordinary softwares.
+</li>
+<li>module program framework
+<ul class="org-ul">
+<li>static int __init myModule_init(void)
+</li>
+<li>static void __exit myModule_exit(void)
+</li>
+<li>module_init(myModule_init)
+</li>
+<li>module_exit(myModule_exit)
+</li>
+<li>MODULE_AUTHOR("");
+</li>
+<li>MODULE_LOCENSE("");
+</li>
+</ul>
+</li>
+<li>module compile
+</li>
+<li>module load
+-insmod lsmod rmmod dmesg
+</li>
+<li>reference between modules
+<ul class="org-ul">
+<li>through kernel symbol table
+</li>
+<li>EXPORT_SYMBOL(referenced_function) to provide a function to be referenced
+</li>
+<li>extern type referecned_function to use 
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="sec-2" >
+
+<h2>linux driver</h2>
+<ul class="org-ul">
+<li>linux driver classes
+<ul class="org-ul">
+<li>char drivers, Block Drivers , Network Drivers and others
+</li>
+</ul>
+</li>
+<li>linux device model after 2.6
+<ul class="org-ul">
+<li>sysfs file system, give a hierachical structur of devices
+<ul class="org-ul">
+<li>Block: block device 
+</li>
+<li>Devices: all devices organized by bus type
+</li>
+<li>bus: all bus type
+</li>
+<li>Dirvers:  all drivers registered 
+</li>
+<li>class: all device organzied by class type
+</li>
+<li>firmware and power
+</li>
+</ul>
+</li>
+<li>Kobejcts,Ksets and Subsystems datastructers
+<ul class="org-ul">
+<li>The kobject is the fundamental structure that holds the device model
+together
+</li>
+<li>Ksets are kobejct that with same type
+</li>
+<li>subsystems use to describes a kind of device subsystem
+</li>
+</ul>
+</li>
+<li>elements of device model<br  />
+   <b>Bus</b>: describe a kind of bus type   <b>Device</b>: describe a device<br  />
+   <b>Driver</b>:  describe a driver          <b>Class</b>: describe a class of devices
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="sec-3" >
+
+<h2>gpio code</h2>
+<ul class="org-ul">
+<li>gpio driver code mainly composites of gpiolib.c and gpio-sch.c
+</li>
+<li>gpiolib.c code provides sysfs for user interface and export function for other module
+reference
+</li>
+<li>gpio-sch.c code is the driver code that interacts with hardware and provide
+function interfaces to gpiolib.c.
+</li>
+<li>how gpio code interact with the hardware?
+<ul class="org-ul">
+<li>gpio code interact with hardware through registers:CGEN, CGIO, CGLV, CGTPE
+,CGTNE, CGGPE, CGSMI, CGTS, RGEN, RGIO, RGLV, RGTPE, RGTNE,RGGPE, RGSMI
+,RGTS,CGNMIEN,RGNMIEN
+</li>
+<li>CGTPE interrupt enable of core gpio when input from 0-1
+</li>
+<li>CGTNE interrupt enable of core gpio when input from 1-0
+</li>
+<li>CGTS :if CGTPE set, 0-1 trigger interuppt,if CGTNE set, 1-0 trigger interupt  - 
+</li>
+<li>&#x2026;&#x2026;&#x2026;&#x2026;&#x2026;&#x2026;&#x2026;..
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="sec-3-1" >
+
+<h3>gpio-sch.c</h3>
+<ul class="org-ul">
+<li>the driver code of gpio-sch.c use linux driver framework of platform
+</li>
+<li>sch_gpio_probe, sch_gpio_remove, sch_gpio_suspend_sys, sch_gpio_resume_sys,
+are defiened in gpio-sch.c to fullfill the framework  
+</li>
+</ul>
+<pre  class="example">
+static struct platform_driver sch_gpio_driver = {
+	.driver = {
+		.name = "sch_gpio",
+		.owner = THIS_MODULE,
+	},
+	.probe		= sch_gpio_probe,
+	.remove		= sch_gpio_remove,
+	.suspend	= sch_gpio_suspend_sys,
+	.resume		= sch_gpio_resume_sys,
+};
+
+module_platform_driver(sch_gpio_driver);
+</pre>
+</section>
+<section id="sec-3-2" >
+
+<h3>interrupts</h3>
+<ul class="org-ul">
+<li>gpio driver code implement functionality of input through interrupts 
+</li>
+<li>interrupt initialization 
+<ul class="org-ul">
+<li>irq_alloc_descs is clalled to  allocate "irq_descs" for core and resume port
+of gpio
+</li>
+</ul>
+</li>
+</ul>
+<pre  class="example">
+gpio-sch.c/689	chip-&gt;irq_base_core = irq_alloc_descs(-1, 0,
+						sch_gpio_core.ngpio,
+						NUMA_NO_NODE);
+gpio-sch.c/698	chip-&gt;irq_base_resume = irq_alloc_descs(-1, 0,
+						sch_gpio_resume.ngpio,
+						NUMA_NO_NODE);
+</pre>
+
+<ul class="org-ul">
+<li>request_irq is called to request interrupt from kernel, irq_num is the
+interuppts number for apply, "sch_gpio_irq_handle" is interrupt function ,
+IRQF_SHARED is the tag of sharing interrupt.
+</li>
+</ul>
+<pre  class="example">
+gpio-sch.c/718	err = request_irq(irq_num, sch_gpio_irq_handler,
+				IRQF_SHARED, KBUILD_MODNAME, chip);
+</pre>
+</section>
+<section>
+<section id="sec-3-2-1" >
+
+<h4>interrupt intialization of every gpio port</h4>
+<ul class="org-ul">
+<li>sch_gpio_core_irqs_init and sch_gpio_resume_irqs_init  will set coresponding
+chip data  using "irq_set_chip_data" , set  irq_chip pointer variable and
+interrupt handler for each gpio port using "irq_set_chip_and_handler_name".  
+</li>
+</ul>
+<pre  class="example">
+gpio-sch.c/726	static void sch_gpio_core_irqs_init(struct sch_gpio *chip, unsigned int num)
+{
+	int i;
+
+	for (i = 0; i &lt; num; i++) {
+		irq_set_chip_data(i + chip-&gt;irq_base_core, chip);
+		irq_set_chip_and_handler_name(i + chip-&gt;irq_base_core,
+						&amp;sch_irq_core,
+						handle_simple_irq,
+						"sch_gpio_irq_core");
+	}
+}
+gpio-sch.c/727	sch_gpio_resume_irqs_init(chip, sch_gpio_resume.ngpio);
+</pre>
+</section>
+</section>
+<section>
+<section id="sec-3-2-2" >
+
+<h4>interrupt handler</h4>
+<pre  class="example">
+static irqreturn_t sch_gpio_irq_handler(int irq, void *dev_id)
+{
+	int res;
+	int i, ret = IRQ_NONE;
+	for (i = 0; i &lt; sch_gpio_core.ngpio; i++) {
+		res = sch_gpio_reg_get(CGTS, i);
+		if (res) {
+			/* clear by setting TS to 1 */
+			sch_gpio_reg_set(CGTS, i, 1);
+			generic_handle_irq(chip_ptr-&gt;irq_base_core + i);
+			ret = IRQ_HANDLED;
+		}
+	}
+	for (i = 0; i &lt; sch_gpio_resume.ngpio; i++) {
+     	res = sch_gpio_reg_get(RGTS, i);
+		if (res) {
+			/* clear by setting TS to 1 */
+			sch_gpio_reg_set(RGTS, i, 1);
+			generic_handle_irq(chip_ptr-&gt;irq_base_resume + i);
+			ret = IRQ_HANDLED;
+		}
+	}
+	return ret;
+}
+</pre>
+<ul class="org-ul">
+<li>function "sch_gpio_irq_handler" will check every gpio port to find the
+interrupt source, if detects a port,will call generic_handle_irq to deal with
+the interrupt.
+</li>
+</ul>
+</section>
+</section>
+<section id="sec-3-3" >
+
+<h3>how sysfs interfaces is created?</h3>
+<ul class="org-ul">
+<li>register gpio class in sysfs
+<ul class="org-ul">
+<li>codes that use to init a gpio class in sysfs can be found in
+gpiolib_sysfs_init function
+</li>
+</ul>
+</li>
+</ul>
+<pre  class="example">
+gpiolib.c/1097 static int __init gpiolib_sysfs_init(void)
+gpiolib.c/1103 	status = class_register(&amp;gpio_class);
+gpiolib.c/1122 		status = gpiochip_export(chip);
+gpiolib.c/1130  postcore_initcall(gpiolib_sysfs_init);
+</pre>
+<ul class="org-ul">
+<li>"class_register" function is called in "gpiolib_sysfs_init" to register gpio
+class under /sys/class/gpio 
+</li>
+<li>"gpiochip_export" function is called in "gpiolib_sysfs_init" to  create the
+class attributes of "export" and "unexport" which coresponds to two readonly
+files under /sys/class/gpio  
+</li>
+</ul>
+</section>
+<section>
+<section id="sec-3-3-1" >
+
+<h4>export a gpio port</h4>
+<ul class="org-ul">
+<li>when write port number to file "export" under /sys/class/gpio, function
+export_store will be clalled and use gpio_export to  creat coresponding
+directory and files under /sys/class/gpio
+</li>
+</ul>
+<pre  class="example">
+gpiolib.c/723 static ssize_t export_store(struct class *class, struct class_attribute *attr, 
+                                                 const char *buf, size_t len)       
+gpiolib.c/817 int gpio_export(unsigned gpio, bool direction_may_change)
+</pre>
+<ul class="org-ul">
+<li>gpio_export create files under corespoding port directory, every file corepond
+to a attribute which has  "show" and "store" functions that define "read" and
+"write" functions.    
+</li>
+<li>the attributes are passed through gpio_attr_group, the attributes are declared
+below: 
+</li>
+</ul>
+<pre  class="example">
+gpiolib.c/303  static /* const */ DEVICE_ATTR(direction, 0644, \
+                     gpio_direction_show,gpio_direction_store);
+
+gpiolib.c/360 static const DEVICE_ATTR(value, 0644, gpio_value_show,\
+                                             gpio_value_store); 
+
+gpiolib.c/540 static DEVICE_ATTR(edge, 0644, gpio_edge_show,\
+                                            gpio_edge_store);
+
+gpiolib.c/583 static const DEVICE_ATTR(active_low, 0644,\
+            gpio_active_low_show, gpio_active_low_store);
+
+gpiolib.c/658 static const DEVICE_ATTR(drive, 0644,\
+                  gpio_drive_show, gpio_drive_store);
+</pre>
+</section>
+
+</section>
+<section id="sec-3-4" >
+
+<h3>how sysfs interact with gpio driver code</h3>
+<ul class="org-ul">
+<li>what gpio_chip does?
+<ul class="org-ul">
+<li>gpio_chip struct contains functions that driver provides for fundemental
+gpio operations interfaces
+</li>
+</ul>
+</li>
+</ul>
+<pre  class="example">
+gpio-sch.c/205 static struct gpio_chip sch_gpio_core = {
+	.label			= "sch_gpio_core",
+	.owner			= THIS_MODULE,
+	.direction_input	= sch_gpio_core_direction_in,
+	.get			= sch_gpio_core_get,
+	.direction_output	= sch_gpio_core_direction_out,
+	.set			= sch_gpio_core_set,
+	.to_irq			= sch_gpio_core_to_irq,
+};
+</pre>
+<ul class="org-ul">
+<li>when gpio_desc is inited
+<ul class="org-ul">
+<li>code in gpiolib.c/1161 define  function that registers a gpio_chip to the
+gpio_desc, and the function is exported using EXPORT_SYMBOL
+</li>
+</ul>
+</li>
+</ul>
+<pre  class="example">
+gpiolib.c/1161  int gpiochip_add(struct gpio_chip *chip);
+</pre>
+<ul class="org-ul">
+<li>then gpiochip_add is used by gpio-sch.c to pass sch_gpio_core and
+sch_gpio_resume into gpio_desc
+</li>
+</ul>
+<pre  class="example">
+gpio-sch.c/681  	err = gpiochip_add(&amp;sch_gpio_core);
+gpio-sch.c/685         err = gpiochip_add(&amp;sch_gpio_resume);
+</pre>
+</section>
+<section>
+<section id="sec-3-4-1" >
+
+<h4>call functions in gpio-sch.c through gpio_desc</h4>
+<pre  class="example">
+static int gpio_get_direction(unsigned gpio)
+{
+	struct gpio_chip	*chip;
+	struct gpio_desc	*desc = &amp;gpio_desc[gpio];
+	int			status = -EINVAL;
+
+	chip = gpio_to_chip(gpio);
+	gpio -= chip-&gt;base;
+
+	if (!chip-&gt;get_direction)
+		return status;
+
+	status = chip-&gt;get_direction(chip, gpio);
+	if (status &gt; 0) {
+		/* GPIOF_DIR_IN, or other positive */
+		status = 1;
+		clear_bit(FLAG_IS_OUT, &amp;desc-&gt;flags);
+	}
+	if (status == 0) {
+		/* GPIOF_DIR_OUT */
+		set_bit(FLAG_IS_OUT, &amp;desc-&gt;flags);
+	}
+	return status;
+}
+</pre>
+<ul class="org-ul">
+<li>gpiolib.c/201 "gpio_get_direction" for example, function get gpio_chip *
+varible chip which points to a "sch_gpio_core" or "sch_gpio_resume",and when
+"chip-&gt;getdirection" is called,correspending function in driver will be called.
+</li>
+</ul>
+</section>
+
+</section>
+<section id="sec-4" >
+
+<h2>a character linux driver to blink LED</h2>
+</section>
+<section id="sec-4-1" >
+
+<h3>character driver framework</h3>
+<p>
+a module init function
+</p>
+<pre  class="example">
+gpio_IO2IO3.c/129  int chardev_init(void);
+</pre>
+<p>
+a  module exit function
+</p>
+<pre  class="example">
+gpio_IO2IO3.c/160 void chardev_exit(void);
+</pre>
+<p>
+<b>operations in module init function</b><br  />
+   apply for a device number
+</p>
+<pre  class="example">
+gpio_IO2IO3.c/132 ret = alloc_chrdev_region(&amp;dev_num,0,1,DEVICENAME);
+</pre>
+<p>
+get major device number
+</p>
+<pre  class="example">
+gpio_IO2IO3.c/139 major_number = MAJOR(dev_num);
+</pre>
+<p>
+apply for memory for cdev                                        
+</p>
+<pre  class="example">
+gpio_IO2IO3.c/143 mcdev = cdev_alloc();
+</pre>
+<p>
+register the cde                                                     
+</p>
+<pre  class="example">
+gpio_IO2IO3/148  ret = cdev_add(mcdev,dev_num,1);
+</pre>
+</section>
+<section id="sec-4-2" >
+
+<h3>interact with the module</h3>
+<ul class="org-ul">
+<li>to interact with the module using stand file read and write operations, drive
+code implement detail functionality through defining corespoding member
+function of file_operations struct.
+</li>
+</ul>
+<pre  class="example">
+gpio_IO2IO3.c/121 
+struct file_operations fops = { 
+  .owner = THIS_MODULE, 
+  .open = device_open,  
+  .write = device_write,
+  .release = device_close,
+ };
+gpio_IO2IO3/144 mcdev-&gt;ops = &amp;ops;
+</pre>
+</section>
+<section id="sec-4-3" >
+
+<h3>file operations corespond to gpio</h3>
+<ul class="org-ul">
+<li>open gpio 31/30 and output 1 into the ports to make port IO2(32) and IO3(18)
+work ,and make IO2 and IO3 output 
+</li>
+</ul>
+<pre  class="example">
+gpio_IO2IO3/51 static int device_open(struct inode *inode, struct file *filp)
+</pre>
+<ul class="org-ul">
+<li>if argument is "0",output IO2 1 and IO3 0,else if
+argument is "1",output IO2 0 and IO3 1
+</li>
+</ul>
+<pre  class="example">
+gpio_IO2IO3/91 static ssize_t device_write(struct file *fp, const char *buff, size_t length,
+  loff_t *ppos)
+</pre>
+<ul class="org-ul">
+<li>close function will free gpio port that opened in device_open and do some
+clean work
+</li>
+</ul>
+<pre  class="example">
+gpio_IO2IO3/108
+static int device_close(struct inode *inode, struct file *filp)
+</pre>
+</section>
+<section id="sec-4-4" >
+
+<h3>module compile and install</h3>
+<p>
+Makefile
+</p>
+<div class="org-src-container">
+
+<pre  class="src src-sh">obj-m := gpio_IO2IO3.o
+<span style="color: #ff6347;">KDIR</span> = /usr/src/kernel/ 
+
+all:
+    $(MAKE) -C $(KDIR) <span style="color: #ff6347;">M</span>=$(PWD) modules
+
+.PHONY:clean
+clean:
+    rm -f *.mod.c *.mod.o *.ko *.o *.tmp_versions
+</pre>
+</div>
+<p>
+install and test
+</p>
+<div class="org-src-container">
+
+<pre  class="src src-sh">$<span style="color: #ff6347;">cd</span> src
+$<span style="color: #ff6347;">make</span>
+$<span style="color: #ff6347;">insmod</span> gpio_IO2IO3.ko
+$<span style="color: #ff6347;">mknod</span> /dev/gpio_IO2IO3 c majornum 0
+$<span style="color: #ff6347;">python</span> ../test.py
+$<span style="color: #ff6347;">rm</span> /dev/gpio_IO2IO3
+$<span style="color: #ff6347;">rmmod</span> gpio_IO2IO3
+</pre>
+</div>
+</section>
+<section id="sec-4-5" >
+
+<h3>python test to blink the LED</h3>
+<div class="org-src-container">
+
+<pre  class="src src-python"><span style="color: #888a85;">#</span><span style="color: #888a85;">!/usr/bin/env python</span>
+
+<span style="color: #729fcf; font-weight: bold;">import</span> time
+
+<span style="color: #729fcf; font-weight: bold;">if</span> <span style="color: #729fcf;">__name__</span> == <span style="color: #ad7fa8; font-style: italic;">"__main__"</span>:    
+        fp = <span style="color: #729fcf;">open</span>(<span style="color: #ad7fa8; font-style: italic;">"/dev/gpio_IO2IO3"</span>,<span style="color: #ad7fa8; font-style: italic;">"w"</span>)
+        <span style="color: #729fcf; font-weight: bold;">while</span> <span style="color: #8ae234;">True</span>:
+                fp.write(<span style="color: #ad7fa8; font-style: italic;">"1"</span>)
+                fp.flush()
+                time.sleep(1)
+                fp.write(<span style="color: #ad7fa8; font-style: italic;">"0"</span>)
+                fp.flush()
+                time.sleep(1)
+</pre>
+</div>
+</section>
+<section id="sec-5" >
+
+<h2>Reference</h2>
+<ol class="org-ol">
+<li><a href="http://lwn.net/Kernel/LDD3/">Linux Device Drivers, Third Edititon</a>
+</li>
+<li><a href="http://stackoverflow.com/questions/18784011/a-simple-character-device-driver">A simple linux character driver</a>]
+</li>
+<li>linux设备驱动开发详解
+</li>
+</ol>
+</section>
+</div>
+</div>
+
+<script src="./reveal.js/lib/js/head.min.js"></script>
+<script src="./reveal.js/js/reveal.min.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: false,
+center: true,
+slideNumber: true,
+rollingLinks: true,
+keyboard: true,
+overview: true,
+width: 1200,
+height: 800,
+margin: 0.10,
+minScale: 0.50,
+maxScale: 2.50,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'cube', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'default',
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: './reveal.js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+ { src: './reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: './reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } }
+]
+});
+</script>
+</body>
+</html>
